@@ -1,0 +1,63 @@
+# Production-ready Dockerfile for Next.js client app
+
+# 1. Install dependencies and build app
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy package files from client and pnpm-lock.yaml from monorepo root
+COPY skillcraft/apps/client/package.json ./
+COPY pnpm-lock.yaml ./
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Install dependencies
+RUN pnpm install
+
+# Install prisma and other dev dependencies needed for build
+RUN pnpm add -D prisma @types/nodemailer
+
+# Ensure @prisma/client is installed correctly
+RUN pnpm add @prisma/client
+
+# Copy the rest of the app, only existing files/directories
+COPY skillcraft/apps/client/src ./src
+COPY skillcraft/apps/client/public ./public
+COPY skillcraft/apps/client/tsconfig.json ./tsconfig.json
+COPY skillcraft/apps/client/next.config.ts ./next.config.ts
+COPY skillcraft/apps/client/next-env.d.ts ./next-env.d.ts
+COPY skillcraft/apps/client/postcss.config.mjs ./postcss.config.mjs
+COPY skillcraft/apps/client/tailwind.config.js ./tailwind.config.js
+COPY skillcraft/apps/client/.env.local ./.env.local
+
+# Copy the Prisma schema directory from the monorepo
+COPY skillcraft/db/prisma ./db/prisma
+
+# Generate Prisma client (run from client context, schema path relative to client)
+RUN pnpm exec prisma generate --schema=./db/prisma/schema.prisma
+
+# Verify Prisma client was generated correctly
+RUN ls -la node_modules/.prisma/client || true
+RUN ls -la node_modules/@prisma/client || true
+
+# Build Next.js app
+RUN pnpm run build
+
+# 2. Run app in minimal image
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+# Install pnpm in the runner stage
+RUN npm install -g pnpm
+
+# Copy only necessary files from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Expose port
+EXPOSE 3000
+
+# Start Next.js app in production mode
+CMD ["pnpm", "run", "start"]

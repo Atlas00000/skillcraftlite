@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String?
+  avatar        String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  courses       Course[]  @relation("UserCourses")
+  progress      Progress[]
+  achievements  Achievement[]
+}
+
+model Profile {
+  id            String    @id @default(cuid())
+  bio           String?
+  location      String?
+  website       String?
+  socialLinks   Json?
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Course {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  price       Float     @default(0)
+  published   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  users       User[]    @relation("UserCourses")
+  progress    Progress[]
+  modules     Module[]
+}
+
+model Module {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  order       Int
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Lesson {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  order       Int
+  moduleId    String
+  module      Module    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Progress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  completed   Boolean   @default(false)
+  score       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, courseId])
+}
+
+model Achievement {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  xpReward    Int       @default(0)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+enum Role {
+  USER
+  INSTRUCTOR
+  ADMIN
+} 

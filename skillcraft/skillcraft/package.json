@@ -1,0 +1,20 @@
+{
+  "name": "lastfronttest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:e2e": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "prisma": "^6.7.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0"
+  }
+}

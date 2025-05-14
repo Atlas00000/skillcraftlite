@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/skillcraft?schema=public
+      - JWT_SECRET=your-super-secret-key-change-in-production
+      - JWT_EXPIRATION=7d
+      - NODE_ENV=development
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=skillcraft
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data: 

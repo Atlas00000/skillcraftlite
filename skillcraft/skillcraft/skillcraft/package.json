@@ -1,0 +1,25 @@
+{
+  "name": "skillcraft-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "db",
+    "services/*",
+    "shared/*",
+    "scripts/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "test:e2e": "cd .. && pnpx playwright test"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "turbo": "^1.13.0"
+  },
+  "dependencies": {
+    "@nestjs/cli": "^11.0.7"
+  }
+}
